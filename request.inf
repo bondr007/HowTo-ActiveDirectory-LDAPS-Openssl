@@ -1,0 +1,28 @@
+;----------------- request.inf -----------------
+[Version]
+ Signature="$Windows NT$"
+
+;The Subject will need to be your active directory domain name
+[NewRequest]
+ Subject = "CN=example.com"
+ KeySpec = 1
+ KeyLength = 4096
+ Exportable = TRUE
+ MachineKeySet = TRUE
+ SMIME = FALSE
+ PrivateKeyArchive = FALSE
+ UserProtected = FALSE
+ UseExistingKeySet = FALSE
+ ProviderName = "Microsoft RSA SChannel Cryptographic Provider"
+ ProviderType = 12
+ RequestType = PKCS10
+ KeyUsage = 0xa0
+
+[EnhancedKeyUsageExtension]
+ OID = 1.3.6.1.5.5.7.3.1 ; Server Authentication
+;The following will add a subject alternative name of a wildcard cert on *.example.com
+;so any ad controller with a hostname of somththing.example.com can use it.
+[Extensions]
+2.5.29.17 = "{text}"
+_continue_ = "dns=*.example.com&"
+_continue_ = "dns=example.com&"
