@@ -1,17 +1,17 @@
 # Get going quick and skip the reading by using this guide
 
 
-## prereqs
-machine with openssl
+## Pre-requirements
+Machine with openssl
 AD Controller with Windows Server 2012 or greater.
 
 
 ## Warning
-This guide does not explain any of the commands. You might want to read the full README.MD first then use this to quickly go through the commands.
+This guide does not explain any of the commands. You might want to read the full [README.MD](https://github.com/bondr007/HowTo-ActiveDirectory-LDAPS-Openssl/blob/master/README.md) first then use this to quickly go through the commands.
 It is also assumed you are using a Linux machine for openssl
 
 
-## env setup
+## Enviroment setup
 Mount your AD controller c:\ drive over SMB. 
 In Ubuntu using the Nautilus (File Browser) you can mount the drive by clicking on the __+ Other Locations__ button in the lower left of the window. 
 Then in the textbox enter the hostname of your ad controller like the following:
@@ -19,7 +19,7 @@ smb://ad01.example.com/c$
 
 This will prompt you for your Active Directory Credentials 
 
-Once mounted right click in some empty space in the windows and select __Open in Terminal__
+Once mounted right click in some empty space in the windows and select "__Open in Terminal__"
 
 Now we can make a folder named LDAPS and download the contents of this repo into it.
 
@@ -37,11 +37,11 @@ __linux__
 ```bash
 # generate the ca key, create a password and keep it for use throught this guide.
 openssl genrsa -des3 -out ca.key 4096
-
 ```
 __linux__
 ```bash
-# create ca cert with valid of 10 years with info based off the provided ca_san.conf file, it will prompt for the password we created earlier 
+# create ca cert with valid of 10 years with info based off the 
+# provided ca_san.conf file, it will prompt for the password we created earlier 
 openssl req -new -x509 \
     -extensions v3_ca \
     -days 3650 \
@@ -62,7 +62,8 @@ certreq -new request.inf ad.csr
 __linux__
 ```bash
 # create ad_ldaps_cert by signing the csr
-# 825 days is the maximum for a cert to be trusted as dictated by the new 2019 guidelines from the CA/Browser Forum
+# 825 days is the maximum for a cert to be trusted as dictated by the 
+# new 2019 guidelines from the CA/Browser Forum
 # This is important since macOS has began to enforce this guideline
 openssl x509 -req -days 825 \
     -in ad.csr \
@@ -100,7 +101,7 @@ $pfxPass = (ConvertTo-SecureString -AsPlainText -Force -String "YOURPASSWORD")
 Get-ChildItem "Cert:\LocalMachine\My\ASDF_YOUR_THUMBPRINT_HERE" | Export-PfxCertificate -FilePath LDAPS_PRIVATEKEY.pfx -Password $pfxPass
 ```
 Now we will have a file named LDAPS_PRIVATEKEY.pfx that contains the cert and privatekey for our active directory domain controllers to use.
-
+__ADDC__
 ```powershell
 $AllDCs = Get-ADDomainController -Filter * -Server nsuok.edu | Select-Object Hostname
 
@@ -115,7 +116,7 @@ Invoke-Command -ComputerName $AllDCs.Hostname -ScriptBlock {
     Import-Certificate -FilePath $caPath -CertStoreLocation 'Cert:\LocalMachine\Root' -Verbose
     Import-PfxCertificate -FilePath $pfxPath -CertStoreLocation Cert:\LocalMachine\My -Password $pfxPass
 
-    #edit path to enable_ldaps.txt
+    #Edit path to enable_ldaps.txt
     ldifde -i -f \\ad01.example.com\c$\LDAPS\enable_ldaps.txt
 }
 ```
