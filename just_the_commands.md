@@ -62,8 +62,8 @@ certreq -new request.inf ad.csr
 __linux__
 ```bash
 # create ad_ldaps_cert by signing the csr
-# 825 days is the maximum for a cert to be trusted as dictated by the 
-# new 2019 guidelines from the CA/Browser Forum
+# 825 days is the maximum for a cert to be trusted as dictated by 
+# the new 2019 guidelines from the CA/Browser Forum
 # This is important since macOS has began to enforce this guideline
 openssl x509 -req -days 825 \
     -in ad.csr \

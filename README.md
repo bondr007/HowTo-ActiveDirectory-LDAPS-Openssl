@@ -82,12 +82,13 @@ basicConstraints=critical,CA:TRUE,pathlen:1
 extendedKeyUsage=serverAuth
 subjectAltName = @alt_names
 #Modify for your details. Must include the commonName in the list below also. 
-#The *.example.com will allow all Domain controllers with the hostname somthing.example.com to use the cert.
+#The *.example.com will allow all Domain controllers with 
+#the hostname somthing.example.com to use the cert.
 [alt_names]
 DNS.1 = *.example.com
 DNS.2 = example.com
 ```
-Next save that file to a directory named LDAPS
+Next save that file to a directory named LDAPS, then run the following commands to create the CA key and cert:
 ```bash
 foo@bar:~$ mkdir LDAPS && cd LDAPS
 
@@ -99,7 +100,8 @@ Generating RSA private key, 4096 bit long modulus (2 primes)
 Enter pass phrase for ca.key:
 Verifying - Enter pass phrase for ca.key:
 
-# create ca cert with valid of 10 years with info based off the provided ca_san.conf file, it will prompt for the password we created earlier 
+# create ca cert with valid of 10 years with info based off the 
+# provided ca_san.conf file, it will prompt for the password we created earlier 
 foo@bar:~/LDAPS$ openssl req -new -x509 \
     -extensions v3_ca \
     -days 3650 \
@@ -163,7 +165,8 @@ extendedKeyUsage=serverAuth
 subjectKeyIdentifier=hash
 subjectAltName = @alt_names
 #Modify for your details. Must include the commonName in the list below also. 
-#The *.example.com will allow all Domain controllers with the hostname somthing.example.com to use the cert.
+#The *.example.com will allow all Domain controllers with 
+#the hostname somthing.example.com to use the cert.
 [alt_names]
 DNS.1 = *.example.com
 DNS.2 = example.com
@@ -172,7 +175,8 @@ DNS.2 = example.com
 Now run the following command to generate the cert for AD:
 ```bash
 # create ad_ldaps_cert by signing the csr
-# 825 days is the maximum for a cert to be trusted as dictated by the new 2019 guidelines from the CA/Browser Forum
+# 825 days is the maximum for a cert to be trusted as dictated by 
+# the new 2019 guidelines from the CA/Browser Forum
 # This is important since macOS has began to enforce this guideline
 openssl x509 -req -days 825 \
     -in ad.csr \
