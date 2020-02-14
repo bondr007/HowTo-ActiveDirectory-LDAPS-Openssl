@@ -2,8 +2,8 @@
 
 
 ## Pre-requirements
-Machine with openssl
-AD Controller with Windows Server 2012 or greater.
+* Machine with openssl
+* AD Controller with Windows Server 2012 or greater.
 
 
 ## Warning
@@ -13,7 +13,7 @@ It is also assumed you are using a Linux machine for openssl
 
 ## Enviroment setup
 Mount your AD controller c:\ drive over SMB. 
-In Ubuntu using the Nautilus (File Browser) you can mount the drive by clicking on the __+ Other Locations__ button in the lower left of the window. 
+In Ubuntu using the Nautilus (File Browser) you can mount the drive by clicking on the "__+ Other Locations__" button in the lower left of the window. 
 Then in the textbox enter the hostname of your ad controller like the following:
 smb://ad01.example.com/c$
 
@@ -101,6 +101,7 @@ $pfxPass = (ConvertTo-SecureString -AsPlainText -Force -String "YOURPASSWORD")
 Get-ChildItem "Cert:\LocalMachine\My\ASDF_YOUR_THUMBPRINT_HERE" | Export-PfxCertificate -FilePath LDAPS_PRIVATEKEY.pfx -Password $pfxPass
 ```
 Now we will have a file named LDAPS_PRIVATEKEY.pfx that contains the cert and privatekey for our active directory domain controllers to use.
+
 __ADDC__
 ```powershell
 $AllDCs = Get-ADDomainController -Filter * -Server nsuok.edu | Select-Object Hostname

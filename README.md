@@ -2,21 +2,21 @@ Skip ahead to [Setup LDAPS using self-signed cert made with openssl](#setup-ldap
 Also,check out [my accompanying github repo](https://github.com/bondr007/HowTo-ActiveDirectory-LDAPS-Openssl) which contains all the files used in this guide. Inside, see [just_the_commands.md](https://github.com/bondr007/HowTo-ActiveDirectory-LDAPS-Openssl/blob/master/just_the_commands.md) to quickly run through just the commands.
 
 ## Insecure LDAP is dying, Long Live Secure LDAPS
-Microsoft will begin enforcing secure connections for Active Directory LDAP ~~in [March of 2020](https://support.microsoft.com/en-us/help/4520412/2020-ldap-channel-binding-and-ldap-signing-requirement-for-windows).~~ Update: Microsoft has extended the deadline to "[2nd half of 2020](https://portal.msrc.microsoft.com/en-us/security-guidance/advisory/ADV190023)". This is the third extension Microsoft has made since first announcing this would be coming back in 2017. Active Directory has long been a haven of questionable security. Microsoft has made several great improvements for security in recent years and this most recent change is designed to plug one of the long-lived security weaknesses of Active Directory.
+Microsoft will begin enforcing secure connections for Active Directory LDAP ~~in [March of 2020](https://support.microsoft.com/en-us/help/4520412/2020-ldap-channel-binding-and-ldap-signing-requirement-for-windows).~~ Update: Microsoft has extended the deadline to "[second half of calendar year 2020](https://portal.msrc.microsoft.com/en-us/security-guidance/advisory/ADV190023)". This is the third extension Microsoft has made since first announcing this change in 2017. Active Directory has long been a haven of questionable security. Microsoft has made several great improvements for security in recent years and this most recent change is designed to plug one of the long-lived security weaknesses of Active Directory.
 
 ## Why is it needed
-Most Active Directory traffic is sent over plain text insecure LDAP protocol on port 389 for authentication and queries. Active Directory joined machines authenticate using windows integrated authentication which uses encrypted methods such as kerberos or NTLM. In the same way that plain text HTTP is insecure LDAP is also vulnerable to man-in-the-middle attacks, and exposure of sensitive information such as username/passwords. LDAPS like HTTPS transmits its data over an encrypted tunnel using SSL or TLS. 
+Many services using Active Directory communicate over plain-text LDAP binds on port 389 for authentication and queries. Active Directory joined machines authenticate using windows integrated authentication which uses encrypted methods such as kerberos or NTLM. In the same way that plain-text HTTP is insecure, LDAP is also vulnerable to man-in-the-middle attacks and the exposure of sensitive information such as username/passwords. LDAPS, like HTTPS, transmits its data over an encrypted tunnel using SSL or TLS. 
 
 ## How it works
-For Active Directory to use LDAPS just like a webserver using HTTPS it needs a certificate issued to it and installed. If you are familiar with certs for webservers the process follows the same way. Create a CSR, certificate signing request, send that to a CA, and then install the client certificate created from the CA. [Here is a great article by cloudflare about SSL/TLS and certs](https://www.cloudflare.com/learning/ssl/how-does-ssl-work/)
+For Active Directory to use LDAPS, just like a web server using HTTPS, it needs a certificate issued to it and installed. If you are familiar with certs for web servers then you are already familiar with the process. First, create a  certificate signing request (CSR), send that to a certificate authority (CA), and then install the client certificate created from the CA. [Here is a great article by cloudflare about SSL/TLS and certs](https://www.cloudflare.com/learning/ssl/how-does-ssl-work/).
 
 ## Self-signed or public CA.
-Publicly signed certs are often already trusted by many services, but are not free for a cert that has an validity period greater a few months. For most systems connecting using LDAPS this benefit of a cert from a public CA is mute since they have a separate truststore just for LDAPS that typically does not contain any public CAs. So for most Self-signed is the way to go, since it is free and your can set extremely long expiration dates.
+Publicly signed certs are often already trusted by many services, but are not free  if the cert  has a validity period of greater than a few months. For most systems connecting using LDAPS, this benefit of a cert from a public CA is moot since they have a separate truststore just for LDAPS that typically does not contain any public CAs. For a vast majority of people Self-signed is the way to go, since it is free and you can set long expiration dates.
 
-## Why not Microsoft CA (Certificate Authority) Server
-When initially looking to configure LDAPS for AD I looked into creating a Microsoft CA server. I ran into several limitations for my use case. First off I found Microsoft's documentation to be quite long and unnecessarily confusing. Once I figured it all out it is not too bad, but as you will see the openssl route is quite a bit easier as long as it fits your use case. The primary reason to use Microsoft CA Server is if you plan on issuing certs for other internal only services like internal webservers. Due to the abundance of methods to get free publicly signed certs like [Let’s Encrypt](https://letsencrypt.org/) for webservers I prefer to use a publicly signed cert even for internal webservers.
+## Why not a Microsoft CA Server
+When initially looking to configure LDAPS for AD I looked into creating a Microsoft CA server. I ran into several limitations for my use case. First, I found Microsoft's documentation to be quite long and unnecessarily confusing. Once I figured it all out, it was not too bad, but as you will see the openssl route is quite a bit easier as long as it fits your use case. The primary reason to use Microsoft CA Server is if you plan on issuing certs for other internal only services like internal web servers. Due to the abundance of methods to get free, publicly signed certs, like [Let’s Encrypt](https://letsencrypt.org/) for web servers, I prefer to use a publicly signed cert even for internal web servers.
 
-# See if your application is using plain text LDAP
+# See if your application is using plain-text LDAP
 From the server running your application you can look at the outbound network traffic and check if there is anything communicating to one of your AD Domain Controllers IP addresses over the default LDAP port of 389. LDAPS uses port 636. The netstat command can be used on both linux and windows to see your open network connections.
 ### Find connections on port 389: Linux
 ```bash
@@ -24,7 +24,7 @@ foo@bar:~$ netstat -antlp | grep 389 | grep ESTABLISHED
 tcp        0      0 127.0.0.1:46046         192.168.1.10:389        ESTABLISHED -
 tcp        0      0 127.0.0.1:34389         216.58.194.78:443       ESTABLISHED -
 ```
-We can see that this machine is communicating to port 389 on the ip 192.168.1.10 which is a AD Domain controller in my test environment.
+We can see that this machine is communicating to port 389 on the ip 192.168.1.10 which is an AD Domain controller in my test environment.
 
 ### find connections on port 389: Windows
 ```
@@ -50,10 +50,10 @@ sudo yum -y install openssl
 ```
 It is also possible to install it on windows. See this guide for installing openssl on windows: https://tecadmin.net/install-openssl-on-windows/
 
-### Creating the CA (Certificate Authority)
-Create a directory for us to work in. *pro tip: make your life easy and mount a directory on your AD controller from the machine with openssl. We will need to move a few files back and forth, mounting it over smb makes this easy*
+### Creating your own CA
+First create a directory to work in. *__Pro tip__: make your life easy and mount a directory on your AD controller from the machine with openssl. We will need to move a few files back and forth and mounting it over smb makes this easy. See these instructions on how to [mount an smb share in Ubuntu](https://github.com/bondr007/HowTo-ActiveDirectory-LDAPS-Openssl/blob/master/just_the_commands.md#enviroment-setup)*
 
-created a text file named ca_san.conf with the following contents, modifying as needed. ex: "example.com" to your domain.
+Create a text file named ca_san.conf with the following contents, modifying as needed. ex: "example.com" to your domain.
 ```conf
 #ca_san.conf
 [ req ]
@@ -110,11 +110,11 @@ foo@bar:~/LDAPS$ openssl req -new -x509 \
 foo@bar:~/LDAPS$ ls
 ca.crt  ca.key
 ```
-Now we have created two files. ca.key and ca.crt
+Now we have created two files: ca.key and ca.crt
 
-Next we will add the ca.crt as a Trusted Root Certificate and create a Certificate Signing request(CSR) on an AD controller
+Next, we will add the ca.crt as a Trusted Root Certificate and create a (CSR) on an AD controller
 
-In powershell __as Admin__ on an AD controller copy over the ca.crt file and run the following to import it as a Trusted Root Certificate
+In powershell, __as Admin__, on an AD controller copy over the ca.crt file and run the following to import it as a Trusted Root Certificate:
 ```powershell
 #import the cert as a trusted CA on the domain controller
 Import-Certificate -FilePath ca.crt  -CertStoreLocation 'Cert:\LocalMachine\Root' -Verbose
@@ -150,12 +150,12 @@ Create a text file named request.inf with the following contents edited for your
 _continue_ = "dns=*.example.com&"
 _continue_ = "dns=example.com&"
 ```
-Next on the AD controller run certreq passing in the request.inf we created and specifying the output file ad.csr
+Next, on the AD controller run certreq passing in the request.inf we created and specifying the output file ad.csr
 ```batch
 certreq -new request.inf ad.csr
 ```
 
-Copy the ad.csr over to your machine with openssl and create a new text file named v3ext.txt with the following contents editing the __alt_names__ to your domain:
+Copy the ad.csr over to your machine with openssl and create a new text file named v3ext.txt with the following contents, editing the __alt_names__ to your domain:
 ```conf
 # v3ext.txt
 keyUsage=digitalSignature,keyEncipherment
@@ -169,7 +169,7 @@ DNS.1 = *.example.com
 DNS.2 = example.com
 ```
 
-next run the following command to generate the cert for AD.
+Now run the following command to generate the cert for AD:
 ```bash
 # create ad_ldaps_cert by signing the csr
 # 825 days is the maximum for a cert to be trusted as dictated by the new 2019 guidelines from the CA/Browser Forum
@@ -183,7 +183,7 @@ openssl x509 -req -days 825 \
     -out ad_ldaps_cert.crt
 ```
 
-Now copy ad_ldaps_cert.crt over to the machine back to the AD Controller and accept the cert
+Copy ad_ldaps_cert.crt over to the machine back to the AD Controller and accept the cert
 ```powershell
 # accept the signed cert 
 certreq -accept ad_ldaps_cert.crt
@@ -200,7 +200,7 @@ Thumbprint                                Subject
 087B0AB4E62DCE1D33323209EA81F2D58E0BF3B5  CN=example.com
 ```
 
-Great now out cert is imported and ready to be used. Now we can restart the AD Controller or create the following file and run a command to tell AD to start using LDAPS
+Great, now our cert is imported and ready to be used. Now we can restart the AD Controller or create the following file and run a command to tell AD to start using LDAPS
 
 enable_ldaps.txt
 ```
@@ -222,7 +222,7 @@ Loading entries..
 The command has completed successfully
 ```
 
-To test that we can use openssl to connect and verify we can establish a secure connection to our AD controller
+To test that we can use openssl to connect and verify, we can establish a secure connection to our AD controller
 ```bash
 openssl s_client -connect nsut-ad01.example.com:636 -CAfile ca.crt
 ```
@@ -230,7 +230,7 @@ openssl s_client -connect nsut-ad01.example.com:636 -CAfile ca.crt
 ### Add Cert to all domain controllers.
 To add the cert and privatekey to all of our domain controllers we need to export the cert/privatekey to a pfx file to be imported on each AD DC.
 
-First we need to get the Thumbprint of our cert to export it. Run this powershell to list your certs under the __Cert:\LocalMachine\My__ cert store. 
+First, we need to get the Thumbprint of our cert to export it. Run this powershell to list your certs under the __Cert:\LocalMachine\My__ cert store: 
 ```powershell
 PS C:\LDAPS> Get-ChildItem "Cert:\LocalMachine\My"
 
@@ -251,7 +251,7 @@ Get-ChildItem "Cert:\LocalMachine\My\087B0AB4E62DCE1D33323209EA81F2D58E0BF3B5" |
 Now we will have a file named LDAPS_PRIVATEKEY.pfx that contains the cert and privatekey for our active directory domain controllers to use.
 
 ### Test all the Domain Controllers
-The Following Powershell will test all of our Active Directory Domain Controllers for LDAPS
+The Following Powershell will test all of our Active Directory Domain Controllers for LDAPS:
 ```powershell
 ##################
 #### TEST ALL AD DCs for LDAPS
@@ -273,9 +273,9 @@ $AllDCs = Get-ADDomainController -Filter * -Server nsuok.edu | Select-Object Hos
 ```
 
 ### Congratulations
-You now have all your domain controllers configured to use Secure LDAPS. But this is just half the battle we now need to configure all of our Services, Apps, AD joined macOS computers and Servers to use LDAPS.
+You now have all your domain controllers configured to use Secure LDAPS. But this is just half the battle, we now need to configure all of our Services, Apps, AD joined macOS computers and Servers to use LDAPS.
 
-### How to find what systems (Servers) are using insecure LDAP Binds
+### How to find what systems and servers are using insecure LDAP Binds
 Read my next article to learn how to turn on logging in Active Directory and export the logs to CSV using powershell.
 Coming soon.
 
