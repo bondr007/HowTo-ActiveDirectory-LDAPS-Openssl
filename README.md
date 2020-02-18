@@ -193,7 +193,7 @@ Copy ad_ldaps_cert.crt over to the machine back to the AD Controller and accept 
 certreq -accept ad_ldaps_cert.crt
 ```
 
-We can check that the cert has been imported by runnung the following powershell. We should see CN=example.com
+We can check that the cert has been imported by running the following powershell. We should see CN=example.com
 ```powershell
 PS C:\LDAPS> Get-ChildItem "Cert:\LocalMachine\My"
 
