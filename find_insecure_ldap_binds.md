@@ -4,7 +4,8 @@
 
 __ADDC__
 ```powershell
-$Events = Find-Events -Report LdapBindingsDetails -DatesRange PastHour -DetectDC
+#Last3days PastHour
+$Events = Find-Events -Report LdapBindingsDetails -DatesRange Last3days -DetectDC
 
 $Events.LdapBindingsDetails | export-csv ldapBindsReport.csv -NoTypeInformation
 ```

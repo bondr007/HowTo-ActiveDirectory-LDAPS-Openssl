@@ -84,13 +84,17 @@ __ADDC__
 ldifde -i -f enable_ldaps.txt
 ```
 
-### We now have this AD controller configured to use LDAPS. 
+### Export Cert/privatekey and import on all all domain controllers
+At this point we now have an AD controller configured to use LDAPS. 
 To export the cert and import it on the rest of domain controllers run the following powershell
 
-
+#### Export cert/privatekey
 __ADDC__
 ```powershell
 #Get the thumbprint of our cert and replace the value in the next command
+# this commend lists all the certs in LocalMachine\My, 
+# we need to get the thumbprint of the cert we added to this DC 
+# and use it in the next command in place of "ASDF_YOUR_THUMBPRINT_HERE"
 Get-ChildItem "Cert:\LocalMachine\My"
 ```
 
