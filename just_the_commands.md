@@ -106,6 +106,9 @@ Get-ChildItem "Cert:\LocalMachine\My\ASDF_YOUR_THUMBPRINT_HERE" | Export-PfxCert
 ```
 Now we will have a file named LDAPS_PRIVATEKEY.pfx that contains the cert and privatekey for our active directory domain controllers to use.
 
+##### Move import cert on rest of domain controllers
+This code block will remotely import the cert of the rest of your domain controllers and activate ldaps
+Edit the path to share the files needed. 
 __ADDC__
 ```powershell
 $AllDCs = Get-ADDomainController -Filter * -Server nsuok.edu | Select-Object Hostname
